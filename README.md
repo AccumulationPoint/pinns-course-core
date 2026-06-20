@@ -97,8 +97,11 @@ to where you ran the command.
   runs it through its built-in emulation layer (no extra setup, just slower).
 - **Disk:** allow ~12 GB of free space (the image unpacks larger than it downloads,
   and the baked system image adds ~1.5 GB).
-- **Updating:** `docker pull ghcr.io/accumulationpoint/pinns-course-core` before
-  running grabs the latest build.
+- **Updating:** an image you already downloaded is **cached** — `docker run` will
+  not auto-refresh it. To get a newer build, pull it explicitly:
+  `docker pull ghcr.io/accumulationpoint/pinns-course-core` (or remove the local
+  copy with `docker rmi ghcr.io/accumulationpoint/pinns-course-core` and `docker
+  run` again).
 
 ## How it's built
 
