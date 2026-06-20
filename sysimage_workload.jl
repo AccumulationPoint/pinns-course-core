@@ -14,15 +14,5 @@ catch e
     @warn "Plots workload step failed (non-fatal — package still baked)" exception = (e, catch_backtrace())
 end
 
-try
-    using CairoMakie
-    f = CairoMakie.Figure()
-    ax = CairoMakie.Axis(f[1, 1]; title = "warmup", xlabel = "x", ylabel = "y")
-    CairoMakie.lines!(ax, 1:10, rand(10))
-    CairoMakie.scatter!(ax, 1:10, rand(10))
-    CairoMakie.save(joinpath(tempdir(), "warmup_makie.png"), f)
-catch e
-    @warn "CairoMakie workload step failed (non-fatal — package still baked)" exception = (e, catch_backtrace())
-end
 
 using IJulia

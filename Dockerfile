@@ -98,7 +98,7 @@ RUN set -eux; \
     julia --project="${SHARED_DEPOT}/environments/pkgc" -e ' \
       using Pkg; Pkg.add(name="PackageCompiler"); \
       using PackageCompiler; \
-      create_sysimage(["Plots", "CairoMakie", "IJulia"]; \
+      create_sysimage(["Plots", "IJulia"]; \
         sysimage_path = "/opt/julia-depot/sysimages/course-1.12.so", \
         project = "/opt/julia-depot/environments/pinn", \
         precompile_execution_file = "/tmp/sysimage_workload.jl", \
