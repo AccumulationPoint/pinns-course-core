@@ -1,0 +1,25 @@
+# Python stack baked into the laptop image (pinns-course-core).
+# Torch/torchvision are installed separately from the CPU wheel index (see
+# Dockerfile). This list is the rest of the scientific + Jupyter stack.
+#
+# Kept a deliberate superset of the hub's course_env/requirements.txt so a
+# laptop matches the hub; JupyterLab itself is bundled here (the hub gets it
+# from TLJH instead).
+
+# deep learning / autodiff (Python side of the course)
+jax
+jaxlib
+
+# scientific core
+numpy
+scipy
+pandas
+matplotlib
+scikit-learn
+Pillow
+requests
+
+# notebook environment
+jupyterlab
+notebook
+ipywidgets

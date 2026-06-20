@@ -1,0 +1,95 @@
+name: build & push pinns-course-core
+
+# Builds the take-home laptop course image on GitHub's runners (no AWS involved),
+# CPU-smoke-tests it (including that the Julia kernel boots from the display system
+# image), and pushes to GHCR. Uses the built-in GITHUB_TOKEN — no extra secrets.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'Project.toml'
+      - 'requirements.txt'
+      - 'entrypoint.sh'
+      - 'julia-kernel.sh'
+      - 'sysimage_workload.jl'
+      - 'welcome_*.ipynb'
+      - '.github/workflows/build.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # GHCR image names must be lowercase.
+  IMAGE: ghcr.io/accumulationpoint/pinns-course-core
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free up runner disk (Julia + torch + sysimage are large)
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image (load locally for smoke test)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ${{ env.IMAGE }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: CPU smoke test
+        run: |
+          set -euxo pipefail
+          # The Julia kernel boots from the display system image.
+          docker run --rm "${IMAGE}:test" /usr/local/bin/julia-kernel.sh -e '
+            img = basename(unsafe_string(Base.JLOptions().image_file))
+            println("kernel system image = ", img)
+            @assert img == "course-1.12.so"
+            @time using Plots
+            @time (plot(1:10, (1:10).^2); nothing)
+            println("first-plot OK (baked into the system image)")'
+          # The @pinn stack imports from the shared base, no recompile noise.
+          docker run --rm "${IMAGE}:test" julia -e '
+            using NeuralPDE, ModelingToolkit, OrdinaryDiffEq, Lux, Plots, MLJ
+            println("julia stack OK")'
+          # Python DL + scientific stack imports.
+          docker run --rm "${IMAGE}:test" python3 -c '
+          import torch, jax, numpy, scipy, pandas, sklearn, matplotlib
+          print("python stack OK:", torch.__version__, jax.__version__)'
+          # Course materials + welcome notebooks present, kernels registered.
+          docker run --rm "${IMAGE}:test" bash -lc \
+            'test -d /home/jovyan/course-materials && test -f /home/jovyan/welcome_julia.ipynb && echo "materials OK"'
+          docker run --rm "${IMAGE}:test" jupyter kernelspec list
+
+      - name: Tag and push (latest + sha)
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euxo pipefail
+          SHA="${GITHUB_SHA::12}"
+          docker tag "${IMAGE}:test" "${IMAGE}:latest"
+          docker tag "${IMAGE}:test" "${IMAGE}:${SHA}"
+          docker push "${IMAGE}:latest"
+          docker push "${IMAGE}:${SHA}"
+          echo "Pushed ${IMAGE}:latest and ${IMAGE}:${SHA}"
