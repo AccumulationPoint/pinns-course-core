@@ -19,6 +19,46 @@ under `~/course-materials`.
 > it keeps working **after** the cloud servers are switched off. The image is the
 > durable artifact; the cloud hub is temporary (course participants only).
 
+## Getting Docker running
+
+You need Docker installed with its engine running. Pick your platform:
+
+**Windows**
+- Install **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** and
+  enable the **WSL 2** backend when prompted (if it complains, run `wsl --install`
+  in an **admin** PowerShell and reboot).
+- Launch Docker Desktop and wait until the whale icon says **"Engine running."**
+- Run the commands in **PowerShell** (or Windows Terminal). Sanity check:
+  `docker version` should show **both** a *Client* and a *Server* section.
+- `error during connect … the target machine actively refused it` means the engine
+  isn't running (start Docker Desktop), or a stray `DOCKER_HOST` is set — clear it
+  with `Remove-Item Env:DOCKER_HOST` and retry.
+
+**Running inside WSL (Ubuntu on Windows, etc.)**
+- Simplest: keep Docker Desktop on Windows and turn on **Settings → Resources →
+  WSL Integration** for your distro — then `docker` just works in the WSL shell.
+- Or install Docker Engine directly inside the distro (the Linux steps below).
+
+**macOS**
+- Install **Docker Desktop**; launch it and wait for **"Engine running."** You can
+  **skip the Docker Hub sign-in** — it isn't needed (this image is public).
+- **Apple Silicon (M1–M4):** it runs under Docker Desktop's emulation automatically;
+  a one-line `--platform` warning on startup is harmless.
+
+**Linux**
+- Install **[Docker Engine](https://docs.docker.com/engine/install/)** (or Docker
+  Desktop). The service is usually already running — `sudo systemctl start docker`
+  if not.
+- Either prefix commands with `sudo`, or add yourself to the `docker` group once:
+  `sudo usermod -aG docker $USER`, then log out and back in.
+
+**Everyone**
+- The first `docker run` prints `Unable to find image … locally` and then downloads
+  it — that's **normal**, not an error. Let it finish (~2 GB, once).
+- **No login required** — the image is public, so anonymous `docker pull` works.
+- Stop the container with **Ctrl-C**. Refresh later with
+  `docker pull ghcr.io/accumulationpoint/pinns-course-core`.
+
 ## What's inside
 
 - **Julia 1.12** with the pinned course environment **`@pinn`** — `NeuralPDE`,
@@ -77,7 +117,14 @@ To build it yourself:
 docker build -t pinns-course-core .
 ```
 
-## License / attribution
+## Attribution
 
-Built for the AIMS PINN course by [Accumulation Point](https://www.accumulationpoint.com).
-Course materials live in [`open-AIMS/Julia_PINN_training_2026`](https://github.com/open-AIMS/Julia_PINN_training_2026).
+This repository is the **Docker build** for the take-home course image, maintained
+by [Accumulation Point](https://www.accumulationpoint.com).
+
+The **course materials** it bundles — the notes, notebooks, and exercises hosted at
+[`open-AIMS/Julia_PINN_training_2026`](https://github.com/open-AIMS/Julia_PINN_training_2026)
+— are the property of the
+**[Australian Institute of Marine Science (AIMS)](https://www.aims.gov.au/)**. They
+are included in the image for participants' convenience; all rights in the course
+materials remain with AIMS.
